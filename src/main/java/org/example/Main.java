@@ -5,6 +5,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Main {
+    @FunctionalInterface
+    private interface Functional {
+        public String calculate(Matcher currentMatcher);
+    }
     final static Pattern PATTERN_TO_DOLLARS = Pattern.compile("toDollars\\(((\\-?[0-9]*\\.?[0-9]+)\\р)\\)");
     final static Pattern PATTERN_TO_RUBLES = Pattern.compile("toRubles\\((\\$(\\-?[0-9]*\\.?[0-9]+))\\)");
     final static Pattern PATTERN_OPERATION_WITH_DOLLARS = Pattern.compile("\\$(\\-?[0-9]*\\.?[0-9]+)\\s([+-])\\s\\$(\\-?[0-9]*\\.?[0-9]+)");
@@ -29,7 +33,7 @@ public class Main {
             }
             if ((currentMatcher = PATTERN_OPERATION_WITH_DOLLARS.matcher(stringBuilder)).find()) {
                 stringBuilder = new StringBuilder(expressionHelping(currentMatcher, currentMatcherExpression ->
-                        "$" + Calculator.operation(
+                        "\\$" + Calculator.operation(
                                 Double.parseDouble(currentMatcherExpression.group(1)),
                                 Double.parseDouble(currentMatcherExpression.group(3)),
                                 currentMatcherExpression.group(2))));
@@ -41,6 +45,7 @@ public class Main {
                                 Double.parseDouble(currentMatcherExpression.group(1)),
                                 Double.parseDouble(currentMatcherExpression.group(3)),
                                 currentMatcherExpression.group(2)) + 'р'));
+                flag = true;
             }
             if(!flag) {
                 throw new RuntimeException(stringBuilder + "\n <- the reduction cannot be performed...check the expression.");
@@ -54,9 +59,7 @@ public class Main {
     }
 
     public static StringBuilder expressionHelping(Matcher currentMatcher, Functional functional) {
-        StringBuilder sb = new StringBuilder();
-        currentMatcher.appendReplacement(sb, functional.calculate(currentMatcher));
-        currentMatcher.appendTail(sb);
+        StringBuilder sb = new StringBuilder(currentMatcher.replaceFirst(functional.calculate(currentMatcher)));
         return sb;
     }
 }
